@@ -25,7 +25,7 @@ local function handleHousePickup(pickup)
             if config.useDrawText then
                 qbx.drawText3d({ text = label, coords = sharedConfig.houses[house].pickups[pickupId].coords })
             elseif not lib.isTextUIOpen() then
-                lib.showTextUI(label, { position = 'left-center' })
+                lib.showTextUI(label, { position = 'right-center' })
             end
         end
         if IsControlJustReleased(0, 38) then
@@ -70,7 +70,7 @@ local function handleHouseLoot(lootId)
         if config.useDrawText then
             qbx.drawText3d({ text = label, coords = sharedConfig.houses[house].loot[lootId].coords })
         elseif not lib.isTextUIOpen() then
-            lib.showTextUI(locale('text.search'), { position = 'left-center' })
+            lib.showTextUI(locale('text.search'), { position = 'right-center' })
         end
         if IsControlJustReleased(0, 38) then
             dropFingerprint()
@@ -159,7 +159,7 @@ local function handleHouseEntrance(houseId)
     if config.useDrawText then
         qbx.drawText3d({ text = displayMessage, coords = houseId.coords })
     elseif not lib.isTextUIOpen() then
-        lib.showTextUI(displayMessage, { position = 'left-center' })
+        lib.showTextUI(displayMessage, { position = 'right-center' })
     end
 end
 
@@ -171,7 +171,7 @@ local function handleHouseExits(interiorId)
     if config.useDrawText then
         qbx.drawText3d({ text = label, coords = interiorId.coords })
     elseif not lib.isTextUIOpen() then
-        lib.showTextUI(label, { position = 'left-center' })
+        lib.showTextUI(label, { position = 'right-center' })
     end
     if IsControlJustReleased(0, 38) then
         lib.requestAnimDict('anim@heists@keycard@')
