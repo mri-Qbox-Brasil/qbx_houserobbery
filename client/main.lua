@@ -4,6 +4,10 @@ local houseLoot = {}
 local house = 1
 local ITEMS = exports.ox_inventory:Items()
 
+AddStateBagChangeHandler('houseRobbery', ('player:%s'):format(cache.serverId), function(_, _, value)
+    if not value then lib.hideTextUI() end
+end)
+
 local function dropFingerprint()
     if qbx.isWearingGloves() then return end
 
@@ -14,7 +18,7 @@ local function dropFingerprint()
 end
 
 -- Handle pickup of objects in an IPL. These are props that are part of the IPL
--- currentDistance is used because 
+-- currentDistance is used because
 ---@param pickup CPoint Loot pickup point
 local function handleHousePickup(pickup)
     local pickupId = pickup.housePickup
@@ -25,7 +29,7 @@ local function handleHousePickup(pickup)
             if config.useDrawText then
                 qbx.drawText3d({ text = label, coords = sharedConfig.houses[house].pickups[pickupId].coords })
             elseif not lib.isTextUIOpen() then
-                lib.showTextUI(label, { position = 'right-center' })
+                lib.showTextUI(label, { position = 'left-center' })
             end
         end
         if IsControlJustReleased(0, 38) then
@@ -70,7 +74,7 @@ local function handleHouseLoot(lootId)
         if config.useDrawText then
             qbx.drawText3d({ text = label, coords = sharedConfig.houses[house].loot[lootId].coords })
         elseif not lib.isTextUIOpen() then
-            lib.showTextUI(locale('text.search'), { position = 'right-center' })
+            lib.showTextUI(locale('text.search'), { position = 'left-center' })
         end
         if IsControlJustReleased(0, 38) then
             dropFingerprint()
@@ -148,37 +152,36 @@ local function handleHouseEntrance(houseId)
     local isOpen = sharedConfig.houses[id].opened
     if isOpen then
         if IsControlJustReleased(0, 38) then
-            lib.requestAnimDict('anim@heists@keycard@')
-            TaskPlayAnim(cache.ped, 'anim@heists@keycard@', 'exit', 5.0, 1.0, -1, 16, 0, false, false, false)
+            lib.playAnim(cache.ped, 'anim@heists@keycard@', 'exit', 5.0, 1.0, -1, 16, 0, false, false, false)
             house = houseId.id
             TriggerServerEvent('qbx_houserobbery:server:enterHouse', houseId.id)
-            RemoveAnimDict('anim@heists@keycard@')
         end
     end
     local displayMessage = isOpen and locale('text.enter_house') or locale('text.enter_requirements')
     if config.useDrawText then
         qbx.drawText3d({ text = displayMessage, coords = houseId.coords })
     elseif not lib.isTextUIOpen() then
-        lib.showTextUI(displayMessage, { position = 'right-center' })
+        lib.showTextUI(displayMessage, { position = 'left-center' })
     end
 end
 
 -- Handles showing house exit text and processing exit
 ---@param interiorId CPoint
 local function handleHouseExits(interiorId)
+    local currentHouse = sharedConfig.houses[LocalPlayer.state.houseRobbery]
+    if not currentHouse or currentHouse.interior ~= interiorId.interior then return end
 
     local label = locale('text.leave_house')
     if config.useDrawText then
         qbx.drawText3d({ text = label, coords = interiorId.coords })
     elseif not lib.isTextUIOpen() then
-        lib.showTextUI(label, { position = 'right-center' })
+        lib.showTextUI(label, { position = 'left-center' })
     end
     if IsControlJustReleased(0, 38) then
-        lib.requestAnimDict('anim@heists@keycard@')
-        TaskPlayAnim(cache.ped, 'anim@heists@keycard@', 'exit', 5.0, 1.0, -1, 16, 0, false, false, false)
+        lib.playAnim(cache.ped, 'anim@heists@keycard@', 'exit', 5.0, 1.0, -1, 16, 0, false, false, false)
         TriggerServerEvent('qbx_houserobbery:server:leaveHouse')
         removeLoot()
-        RemoveAnimDict('anim@heists@keycard@')
+        lib.hideTextUI()
     end
 end
 
@@ -191,6 +194,10 @@ local function setupHouses()
             distance = config.debugPoints and 50 or 1.6,
             interior = sharedConfig.houses[i].interior
         })
+        function point:onEnter()
+            house = self.id
+        end
+
         function point:onExit()
             lib.hideTextUI()
         end
@@ -201,12 +208,12 @@ local function setupHouses()
     end
     for i = 1, #sharedConfig.interiors do
         local point = lib.points.new({
-            id = i,
+            interior = i,
             coords = sharedConfig.interiors[i].exit.xyz,
             distance = 1.6,
         })
         function point:onExit()
-            lib.hideTextUI()
+            if LocalPlayer.state.houseRobbery then lib.hideTextUI() end
         end
 
         function point:nearby()
@@ -218,11 +225,9 @@ end
 
 ---@param difficulty SkillCheckDifficulity[] Ox_lib skillcheck difficulty table
 lib.callback.register('qbx_houserobbery:client:startSkillcheck', function(difficulty)
-    lib.requestAnimDict('veh@break_in@0h@p_m_one@')
-    TaskPlayAnim(cache.ped, 'veh@break_in@0h@p_m_one@', 'std_force_entry_rds', 3.0, 3.0, -1, 17, 0, false, false, false)
+    lib.playAnim(cache.ped, 'veh@break_in@0h@p_m_one@', 'std_force_entry_rds', 3.0, 3.0, -1, 17, 0, false, false, false)
     local success = lib.skillCheck(difficulty)
     ClearPedTasks(cache.ped)
-    RemoveAnimDict('veh@break_in@0h@p_m_one@')
     return success
 end)
 
